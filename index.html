@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="ja"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="独語診断">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#1b1b1b">
+<title>ドイツ語 到達度診断</title>
+<style>
+:root{--bg:#fafaf8;--fg:#1b1b1b;--mut:#666;--line:#d9d9d4;--card:#fff;--ac:#1b1b1b;--ok:#146c2e;--mid:#8a5a00;--ng:#b00020}
+@media(prefers-color-scheme:dark){:root{--bg:#161618;--fg:#ececec;--mut:#9a9a9a;--line:#333;--card:#1f1f22;--ac:#ececec;--ok:#6fd48c;--mid:#e0b04a;--ng:#ff7a8c}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,"Hiragino Sans","Noto Sans CJK JP",sans-serif;font-size:18px;line-height:1.6;-webkit-text-size-adjust:100%}
+main{max-width:720px;margin:0 auto;padding:20px 18px 80px}
+h1{font-size:24px;margin:8px 0 4px}h2{font-size:20px;margin:28px 0 8px;border-bottom:2px solid var(--fg);padding-bottom:4px}
+p{margin:8px 0}.mut{color:var(--mut);font-size:15px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin:14px 0}
+button{font:inherit;border:1.5px solid var(--fg);background:var(--card);color:var(--fg);border-radius:10px;padding:12px 18px;min-height:48px;cursor:pointer}
+button.primary{background:var(--ac);color:var(--bg)}
+button.dk{border-color:var(--line);color:var(--mut)}
+button:active{opacity:.7}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.opts{display:grid;gap:8px;margin-top:10px}
+.opts button{text-align:left}
+.opts button.sel{background:var(--ac);color:var(--bg)}
+input[type=text]{font:inherit;width:100%;padding:12px;border:1.5px solid var(--fg);border-radius:10px;background:var(--card);color:var(--fg);min-height:50px}
+.q{font-size:22px;line-height:1.55;word-break:break-word}
+.q .blank{display:inline-block;min-width:3em;border-bottom:2px solid var(--fg)}
+.prog{height:6px;background:var(--line);border-radius:3px;margin:6px 0 2px;overflow:hidden}.prog i{display:block;height:100%;background:var(--ac);width:0}
+.chars{display:flex;gap:8px;margin-top:8px}.chars button{min-width:52px;padding:8px 0;text-align:center}
+table{border-collapse:collapse;width:100%;margin:8px 0;font-size:16px}
+td,th{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left;vertical-align:top}
+th{font-size:13px;color:var(--mut);font-weight:600}
+.st-ok{color:var(--ok);font-weight:700}.st-mid{color:var(--mid);font-weight:700}.st-ng{color:var(--ng);font-weight:700}.st-na{color:var(--mut)}
+.rec{border:2px solid var(--fg);border-radius:12px;padding:14px 16px;margin:14px 0}
+.rec b{font-size:19px}
+.wr{border-left:3px solid var(--ng);padding:4px 10px;margin:10px 0;font-size:16px}
+.wr small{color:var(--mut)}
+textarea{width:100%;height:150px;font:14px/1.4 monospace;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--card);color:var(--fg)}
+.hide{display:none}
+</style></head>
+<body><main>
+<section id="s-start">
+<h1>ドイツ語 到達度診断</h1>
+<p class="mut">文法19章と語彙6段階を測り、学習の出発点を示します。通信不要、結果は端末内にだけ保存されます。</p>
+<div class="card">
+<p><b>進め方</b></p>
+<p>文法は各章3問、語彙は各段階6問です。ほとんどが記述式で、選択式は5択に「分からない」がつきます。当てずっぽうの正解を数えないため、<b>分からない問題は「分からない」を押してください</b>。減点はありません。</p>
+<p>ä ö ü ß は、入力欄の下のボタンか、ae oe ue ss で代用できます。大文字小文字は区別しませんが、名詞は冠詞をつけて答えます。</p>
+<p>回答中に正誤は表示しません。最後にまとめて解説と見直しの問題を出します。</p>
+<p class="mut">所要時間の目安は20から40分です。段階の習得章が4割を切ると、その先は出題しません。</p>
+</div>
+<div class="row"><button class="primary" id="b-start">診断を始める</button><button id="b-hist">過去の結果</button></div>
+<div id="hist" class="hide"></div>
+</section>
+<section id="s-q" class="hide">
+<div class="mut" id="q-label"></div>
+<div class="prog"><i id="q-prog"></i></div>
+<div class="card"><div class="q" id="q-text"></div><div id="q-hint" class="mut"></div>
+<div id="q-input"></div>
+<div class="row"><button class="primary" id="b-ans">回答する</button><button class="dk" id="b-dk">分からない</button></div></div>
+</section>
+<section id="s-ask" class="hide">
+<h2>専門語彙</h2>
+<p>医学と建築・美術の専門語彙(各6問)も測りますか。</p>
+<div class="row"><button class="primary" id="b-sp-y">測る</button><button id="b-sp-n">ここで終える</button></div>
+</section>
+<section id="s-rep" class="hide"></section>
+</main>
+<script>// 文法項目バンク。t=記述式(typed)、m=5択+分からない。a は正解(複数は | 区切り)。
+var CONCEPTS = [
+ {c:2,stage:'A1',name:'名詞の性・冠詞・複数形'},
+ {c:3,stage:'A1',name:'現在形・V2語順・疑問文'},
+ {c:4,stage:'A1',name:'否定 nicht / kein'},
+ {c:5,stage:'A1',name:'格(1・4・3格)と人称代名詞'},
+ {c:6,stage:'A1',name:'前置詞と格'},
+ {c:7,stage:'A2',name:'助動詞と枠構造'},
+ {c:8,stage:'A2',name:'分離動詞・非分離動詞'},
+ {c:9,stage:'A2',name:'現在完了形'},
+ {c:10,stage:'A2',name:'過去形'},
+ {c:11,stage:'A2',name:'従属節と接続詞'},
+ {c:12,stage:'B1',name:'形容詞の語尾変化'},
+ {c:13,stage:'B1',name:'2格'},
+ {c:14,stage:'B1',name:'比較表現'},
+ {c:15,stage:'B1',name:'再帰動詞・動詞と前置詞'},
+ {c:16,stage:'B1',name:'関係節'},
+ {c:17,stage:'B2',name:'受動態'},
+ {c:18,stage:'B2',name:'接続法II式'},
+ {c:19,stage:'B2',name:'zu不定詞と構文'},
+ {c:20,stage:'B2',name:'接続法I式・間接話法'}
+];
+var BANK = [
+// 第2章
+{c:2,t:'t',q:'Plural: das Kind → die ___',a:'Kinder'},
+{c:2,t:'t',q:'Plural: die Frau → die ___',a:'Frauen'},
+{c:2,t:'t',q:'___ Mädchen ist nett.(定冠詞・1格)',a:'Das'},
+{c:2,t:'t',q:'___ Zeitung ist neu.(定冠詞・1格)',a:'Die'},
+{c:2,t:'t',q:'Ich kenne den ___.(der Student の4格)',a:'Studenten'},
+{c:2,t:'t',q:'Plural: das Auto → die ___',a:'Autos'},
+// 第3章
+{c:3,t:'t',q:'Er ___ gern Krimis.(lesen)',a:'liest'},
+{c:3,t:'t',q:'Du ___ morgen nach Berlin.(fahren)',a:'fährst'},
+{c:3,t:'t',q:'Heute ___ ich Deutsch.(lernen)',a:'lerne'},
+{c:3,t:'t',q:'___ wohnst du?(どこに)',a:'Wo'},
+{c:3,t:'t',q:'Er ___ heute nicht.(arbeiten)',a:'arbeitet'},
+{c:3,t:'m',q:'正しい文はどれか。',o:['Heute ich lerne Deutsch.','Heute lerne ich Deutsch.','Heute lerne Deutsch ich.','Ich heute lerne Deutsch.','Lerne heute ich Deutsch.'],k:1},
+// 第4章
+{c:4,t:'t',q:'Ich habe ___ Zeit.(否定・女性4格)',a:'keine'},
+{c:4,t:'t',q:'Das ist ___ teuer.(否定)',a:'nicht'},
+{c:4,t:'t',q:'Er hat ___ Auto.(否定・中性4格)',a:'kein'},
+{c:4,t:'t',q:'Wir haben ___ Hunger.(否定・男性4格)',a:'keinen'},
+{c:4,t:'t',q:'Hast du keinen Hunger? — ___, ich habe Hunger.(いや、ある)',a:'Doch'},
+{c:4,t:'m',q:'正しい文はどれか。',o:['Ich habe nicht Geld.','Ich habe kein Geld.','Ich habe keine Geld.','Ich bin kein müde.','Ich habe nicht kein Geld.'],k:1},
+// 第5章
+{c:5,t:'t',q:'Ich sehe ___ Mann.(der Mann・4格の定冠詞)',a:'den'},
+{c:5,t:'t',q:'Ich helfe ___.(du)',a:'dir'},
+{c:5,t:'t',q:'Sie gibt ___ Kind einen Apfel.(das Kind・3格の定冠詞)',a:'dem'},
+{c:5,t:'t',q:'Das Buch gehört ___.(彼女)',a:'ihr'},
+{c:5,t:'t',q:'Ich rufe ___ an.(彼を)',a:'ihn'},
+{c:5,t:'t',q:'「私はそれを彼に渡す」Ich gebe ___ ___.(代名詞2語)',a:'es ihm'},
+// 第6章
+{c:6,t:'t',q:'Wir fahren mit ___ Zug.(der Zug)',a:'dem'},
+{c:6,t:'t',q:'Ich gehe in ___ Stadt.(die Stadt・方向)',a:'die'},
+{c:6,t:'t',q:'Das Buch liegt auf ___ Tisch.(der Tisch・位置)',a:'dem'},
+{c:6,t:'t',q:'Er kommt aus ___ Schweiz.(die Schweiz)',a:'der'},
+{c:6,t:'t',q:'Ich lege das Buch auf ___ Tisch.(der Tisch・方向)',a:'den'},
+{c:6,t:'t',q:'Wir gehen ___ Kino.(in das の融合形)',a:'ins'},
+{c:6,t:'t',q:'Ich wohne bei ___ Eltern.(meine Eltern・3格)',a:'meinen'},
+// 第7章
+{c:7,t:'t',q:'Ich ___ gut schwimmen.(können)',a:'kann'},
+{c:7,t:'t',q:'Hier ___ man nicht rauchen.(禁止を表す dürfen の man 用の形)',a:'darf'},
+{c:7,t:'t',q:'Er ___ morgen arbeiten.(義務・müssen)',a:'muss'},
+{c:7,t:'t',q:'Wir wollen im Sommer nach Norwegen ___.(fahren)',a:'fahren'},
+{c:7,t:'t',q:'「君が来る必要はない」Du ___ nicht kommen.',a:'musst'},
+{c:7,t:'m',q:'「ここでは喫煙してはならない」に最も近い文はどれか。',o:['Hier muss man nicht rauchen.','Hier darf man nicht rauchen.','Hier will man nicht rauchen.','Hier soll man rauchen.','Hier mag man nicht rauchen.'],k:1},
+{c:7,t:'m',q:'正しい語順はどれか。',o:['Ich kann schwimmen gut.','Ich gut kann schwimmen.','Ich kann gut schwimmen.','Ich schwimmen kann gut.','Kann ich gut schwimmen.'],k:2},
+// 第8章
+{c:8,t:'t',q:'Wann ___ der Zug ___?(ankommen・2語)',a:'kommt an'},
+{c:8,t:'t',q:'Ich muss früh ___.(aufstehen)',a:'aufstehen'},
+{c:8,t:'t',q:'Er ___ mich jeden Abend ___.(anrufen・2語)',a:'ruft an'},
+{c:8,t:'t',q:'Ich ___ dich nicht.(verstehen)',a:'verstehe'},
+{c:8,t:'t',q:'分離動詞はどちらか。einladen / besuchen',a:'einladen'},
+{c:8,t:'m',q:'正しい文はどれか。',o:['Ich aufstehe um sieben.','Ich stehe um sieben auf.','Ich stehe auf um sieben.','Ich auf stehe um sieben.','Um sieben aufstehe ich.'],k:1},
+// 第9章
+{c:9,t:'t',q:'Gestern habe ich einen Film ___.(sehen の過去分詞)',a:'gesehen'},
+{c:9,t:'t',q:'Sie ___ nach Wien gefahren.(haben か sein の現在形)',a:'ist'},
+{c:9,t:'t',q:'Wir haben das Museum ___.(besuchen の過去分詞)',a:'besucht'},
+{c:9,t:'t',q:'Er ist schon um fünf ___.(aufstehen の過去分詞)',a:'aufgestanden'},
+{c:9,t:'t',q:'Ich habe gestern lange ___.(telefonieren の過去分詞)',a:'telefoniert'},
+{c:9,t:'t',q:'Ich ___ gestern zu Hause geblieben.(haben か sein)',a:'bin'},
+{c:9,t:'m',q:'正しい文はどれか。',o:['Ich habe nach Wien gefahren.','Ich bin nach Wien gefahren.','Ich bin nach Wien gefahrt.','Ich habe nach Wien gefahrt.','Ich bin gefahren nach Wien.'],k:1},
+// 第10章
+{c:10,t:'t',q:'Gestern ___ ich müde.(sein の過去形)',a:'war'},
+{c:10,t:'t',q:'Wir ___ keine Zeit.(haben の過去形)',a:'hatten'},
+{c:10,t:'t',q:'Er ___ nicht kommen.(können の過去形)',a:'konnte'},
+{c:10,t:'t',q:'Der Mann ___ langsam durch die Gasse.(gehen の過去形)',a:'ging'},
+{c:10,t:'t',q:'Sie ___ früh ___.(aufstehen の過去形・2語)',a:'stand auf'},
+{c:10,t:'m',q:'gehen の過去形(ich)はどれか。',o:['gehte','ging','gang','geht','gegangen'],k:1},
+// 第11章
+{c:11,t:'t',q:'Ich weiß, ___ er heute nicht kommt.(〜ということ)',a:'dass'},
+{c:11,t:'t',q:'Ich bleibe zu Hause, weil ich krank ___.(sein)',a:'bin'},
+{c:11,t:'t',q:'Weil ich krank bin, ___ ich zu Hause.(bleiben)',a:'bleibe'},
+{c:11,t:'t',q:'Er sagt, dass er das Buch schon gelesen ___.(haben)',a:'hat'},
+{c:11,t:'t',q:'Ich bleibe zu Hause, ___ ich bin krank.(等位接続詞「なぜなら」)',a:'denn'},
+{c:11,t:'t',q:'___ ich ein Kind war, wohnte ich in Köln.(過去の一回の「〜とき」)',a:'Als'},
+{c:11,t:'m',q:'正しい文はどれか。',o:['Ich bleibe hier, weil ich bin müde.','Ich bleibe hier, weil ich müde bin.','Ich bleibe hier, weil bin ich müde.','Ich bleibe hier, weil müde ich bin.','Ich bleibe hier, weil ich müde.'],k:1},
+// 第12章
+{c:12,t:'t',q:'Der ___ Lehrer ist nett.(neu)',a:'neue'},
+{c:12,t:'t',q:'Ich kaufe einen ___ Mantel.(blau)',a:'blauen'},
+{c:12,t:'t',q:'Das ist ein ___ Buch.(interessant・中性1格)',a:'interessantes'},
+{c:12,t:'t',q:'Mit ___ Wasser schmeckt es besser.(kalt・冠詞なし3格)',a:'kaltem'},
+{c:12,t:'t',q:'Die ___ Bäume stehen am Fluss.(alt)',a:'alten'},
+{c:12,t:'t',q:'Sie hat eine ___ Familie.(groß)',a:'große'},
+{c:12,t:'m',q:'正しい文はどれか。',o:['Ich habe ein neue Auto.','Ich habe ein neues Auto.','Ich habe ein neuer Auto.','Ich habe ein neuen Auto.','Ich habe ein neus Auto.'],k:1},
+// 第13章
+{c:13,t:'t',q:'Das ist das Auto ___ Lehrers.(定冠詞・2格)',a:'des'},
+{c:13,t:'t',q:'Die Farbe ___ Hauses gefällt mir.(定冠詞・2格)',a:'des'},
+{c:13,t:'t',q:'der Name ___ Stadt(die Stadt の2格の定冠詞)',a:'der'},
+{c:13,t:'t',q:'Wegen ___ Regens bleiben wir hier.(定冠詞・2格)',a:'des'},
+{c:13,t:'t',q:'「アンナの兄」___ Bruder(人名の2格)',a:'Annas'},
+{c:13,t:'t',q:'Die Bibliothek ___ Universität ist geöffnet.(die Universität の2格)',a:'der'},
+{c:13,t:'m',q:'正しい形はどれか。',o:['das Haus des Mann','das Haus des Mannes','das Haus dem Mannes','das Haus den Mannes','das Haus der Mannes'],k:1},
+// 第14章
+{c:14,t:'t',q:'Mein Bruder ist ___ als ich.(alt の比較級)',a:'älter'},
+{c:14,t:'t',q:'Er ist so groß ___ sein Vater.',a:'wie'},
+{c:14,t:'t',q:'Heute ist es kälter ___ gestern.',a:'als'},
+{c:14,t:'t',q:'Das ist das ___ Restaurant der Stadt.(gut の最上級・名詞の前・中性1格)',a:'beste'},
+{c:14,t:'t',q:'Ich esse ___ Reis als Brot.(gern の比較級)',a:'lieber'},
+{c:14,t:'t',q:'Sie läuft am ___.(schnell の最上級)',a:'schnellsten'},
+{c:14,t:'m',q:'正しい文はどれか。',o:['Er ist älter wie ich.','Er ist älter als ich.','Er ist alter als ich.','Er ist ältest als ich.','Er ist mehr alt als ich.'],k:1},
+// 第15章
+{c:15,t:'t',q:'Ich freue ___ auf das Wochenende.(再帰代名詞)',a:'mich'},
+{c:15,t:'t',q:'Er interessiert sich ___ Kunst.(前置詞)',a:'für'},
+{c:15,t:'t',q:'Wir warten ___ den Bus.(前置詞)',a:'auf'},
+{c:15,t:'t',q:'Ich wasche ___ die Hände.(再帰代名詞・3格)',a:'mir'},
+{c:15,t:'t',q:'___ wartest du?(何を待っているの・wo- の形)',a:'Worauf'},
+{c:15,t:'t',q:'Er ärgert sich ___ den Lärm.(前置詞)',a:'über'},
+{c:15,t:'m',q:'正しい文はどれか。',o:['Ich interessiere mich an Kunst.','Ich interessiere mich für Kunst.','Ich interessiere mich über Kunst.','Ich interessiere mich auf Kunst.','Ich interessiere mich von Kunst.'],k:1},
+// 第16章
+{c:16,t:'t',q:'Der Mann, ___ dort steht, ist mein Onkel.(関係代名詞)',a:'der'},
+{c:16,t:'t',q:'Der Mann, ___ ich gestern gesehen habe, ist mein Onkel.',a:'den'},
+{c:16,t:'t',q:'Das Kind, ___ ich helfe, ist krank.(3格)',a:'dem'},
+{c:16,t:'t',q:'Die Frau, ___ Sohn Arzt ist, wohnt neben uns.(その人の・2格)',a:'deren'},
+{c:16,t:'t',q:'Das Haus, in ___ ich wohne, ist alt.',a:'dem'},
+{c:16,t:'t',q:'Alles, ___ er sagt, ist wahr.',a:'was'},
+{c:16,t:'m',q:'正しい文はどれか。',o:['Der Mann, der steht dort, ist mein Onkel.','Der Mann, der dort steht, ist mein Onkel.','Der Mann, dort der steht, ist mein Onkel.','Der Mann, den dort steht, ist mein Onkel.','Der Mann, dem dort steht, ist mein Onkel.'],k:1},
+// 第17章
+{c:17,t:'t',q:'Das Museum ___ vom Architekten entworfen.(werden の現在形)',a:'wird'},
+{c:17,t:'t',q:'Die Kirche ___ 1200 gebaut.(werden の過去形)',a:'wurde'},
+{c:17,t:'t',q:'Das Haus ist 1990 gebaut ___.(受動の完了形)',a:'worden'},
+{c:17,t:'t',q:'Das Problem muss gelöst ___.(受動の不定詞)',a:'werden'},
+{c:17,t:'t',q:'Das Geschäft ___ geöffnet.(「店は開いている」状態・sein か werden の現在形)',a:'ist'},
+{c:17,t:'t',q:'Das Haus wurde ___ Architekten gebaut.(von + dem の融合形)',a:'vom'},
+{c:17,t:'m',q:'動作受動の文はどれか。',o:['Das Geschäft ist geöffnet.','Das Geschäft wird geöffnet.','Das Geschäft hat geöffnet.','Das Geschäft öffnet sich.','Das Geschäft ist öffnen.'],k:1},
+// 第18章
+{c:18,t:'t',q:'Wenn ich mehr Zeit ___, würde ich ins Museum gehen.(haben の接続法II)',a:'hätte'},
+{c:18,t:'t',q:'Wenn ich reich ___, würde ich ein Haus kaufen.(sein の接続法II)',a:'wäre'},
+{c:18,t:'t',q:'___ Sie mir bitte helfen?(können の接続法II・丁寧な依頼)',a:'Könnten'},
+{c:18,t:'t',q:'Wenn ich das gewusst ___, wäre ich nicht gekommen.(haben の接続法II)',a:'hätte'},
+{c:18,t:'t',q:'Wenn er gekommen ___, hätten wir uns gefreut.(sein の接続法II)',a:'wäre'},
+{c:18,t:'t',q:'Er tut so, ___ ob er alles wüsste.',a:'als'},
+{c:18,t:'m',q:'非現実の仮定として正しい文はどれか。',o:['Wenn ich Zeit habe, würde ich kommen.','Wenn ich Zeit hätte, würde ich kommen.','Wenn ich würde Zeit haben, würde ich kommen.','Wenn ich Zeit hatte, würde ich kommen.','Wenn ich Zeit haben würde, kam ich.'],k:1},
+// 第19章
+{c:19,t:'t',q:'Ich versuche, früh ___.(aufstehen の zu不定詞)',a:'aufzustehen'},
+{c:19,t:'t',q:'Er hat vergessen, die Tür ___.(zumachen の zu不定詞)',a:'zuzumachen'},
+{c:19,t:'t',q:'Es ist wichtig, jeden Tag Deutsch ___ lernen.',a:'zu'},
+{c:19,t:'t',q:'Ich lerne Deutsch, ___ in Wien zu studieren.(〜するために)',a:'um'},
+{c:19,t:'t',q:'Er ging weg, ___ ein Wort zu sagen.(〜せずに)',a:'ohne'},
+{c:19,t:'t',q:'Ich habe keine Lust, ___ kochen.',a:'zu'},
+{c:19,t:'m',q:'正しい文はどれか。',o:['Ich möchte zu gehen.','Ich möchte gehen.','Ich möchte gehen zu.','Ich möchte zu gehen zu.','Ich möchte um gehen.'],k:1},
+// 第20章
+{c:20,t:'t',q:'Er sagt, er ___ müde.(sein の接続法I式)',a:'sei'},
+{c:20,t:'t',q:'Sie sagte, sie ___ keine Zeit.(haben の接続法I式・3人称単数)',a:'habe'},
+{c:20,t:'t',q:'Sie fragte, wann der Zug ___.(fahren の接続法I式)',a:'fahre'},
+{c:20,t:'t',q:'Sie sagen, sie ___ keine Zeit.(haben・I式が直説法と同形になるため II式で代用)',a:'hätten'},
+{c:20,t:'t',q:'Er behauptet, er habe das Buch nicht ___.(lesen の過去分詞)',a:'gelesen'},
+{c:20,t:'t',q:'Sie sagte, sie ___ gestern in Berlin gewesen.(sein の接続法I式)',a:'sei'},
+{c:20,t:'m',q:'書き言葉の間接話法として適切な文はどれか。',o:['Er sagt, dass er sei müde.','Er sagt, er sei müde.','Er sagt, er ist müde dass.','Er sagt, dass sei er müde.','Er sagt, sei er müde dass.'],k:1}
+];
+</script>
+<script>// 診断エンジン(DOMに依存しない)
+var DECKS = {A1:'01 基礎 A1',A2:'02 初級 A2',B1:'03 中級 B1',B2:'04 上級 B2',med:'05 専門 医学',arch:'06 専門 建築・美術'};
+var VLEVELS = ['A1','A2','B1','B2'];
+var STAGES = ['A1','A2','B1','B2'];
+var PER_CONCEPT = 3, PER_VLEVEL = 6;
+
+function norm(s){
+  s = String(s||'').toLowerCase().trim();
+  s = s.replace(/[“”„"'`´’]/g,'').replace(/[.!?。、,;:]+$/,'').replace(/\s+/g,' ');
+  return s.replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss');
+}
+function answerOf(it){ return it.t==='m' ? it.o[it.k] : it.a.split('|')[0]; }
+function isCorrect(it, resp){
+  if(resp===null || resp===undefined || resp==='') return false;
+  if(it.t==='m') return resp===it.k;
+  var r = norm(resp), as = it.a.split('|');
+  for(var i=0;i<as.length;i++){ if(norm(as[i])===r) return true; }
+  return false;
+}
+function shuffle(a, rng){
+  a = a.slice();
+  for(var i=a.length-1;i>0;i--){ var j=Math.floor(rng()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
+  return a;
+}
+function pickForConcept(bank, c, rng){
+  var pool = shuffle(bank.filter(function(x){return x.c===c;}), rng);
+  var out=[], mc=0;
+  for(var i=0;i<pool.length && out.length<PER_CONCEPT;i++){
+    if(pool[i].t==='m'){ if(mc>=1) continue; mc++; }
+    out.push(pool[i]);
+  }
+  return shuffle(out, rng);
+}
+function conceptStatus(log, c){
+  var xs = log.filter(function(l){return l.kind==='g' && l.c===c;});
+  if(!xs.length) return null;
+  var n = xs.filter(function(l){return l.ok;}).length;
+  var tc = xs.filter(function(l){return l.ok && l.item.t==='t';}).length;
+  if(n===xs.length && n>=PER_CONCEPT) return 'ok';
+  if(n>=2 && tc>=1) return 'mid';
+  return 'ng';
+}
+function vocabStatus(log, lvl){
+  var xs = log.filter(function(l){return l.kind==='v' && l.lvl===lvl;});
+  if(!xs.length) return null;
+  var n = xs.filter(function(l){return l.ok;}).length, r = n/xs.length;
+  if(r>=0.67) return 'ok';
+  if(r>=0.34) return 'mid';
+  return 'ng';
+}
+// セッション。phase: g(stage index) → v(level index) → s(専門・任意) → done
+function newSession(bank, concepts, vocab, rng){
+  var s = {bank:bank, concepts:concepts, vocab:vocab, rng:rng, log:[], queue:[], phase:'g', idx:0,
+           stopG:false, stopV:false, askSpecial:false, special:false, cur:null, meta:null};
+  loadPhase(s);
+  return s;
+}
+function stageConcepts(s, st){ return s.concepts.filter(function(c){return c.stage===st;}); }
+function loadPhase(s){
+  s.queue=[]; s.meta=null;
+  if(s.phase==='g'){
+    var st = STAGES[s.idx];
+    stageConcepts(s, st).forEach(function(c){
+      pickForConcept(s.bank, c.c, s.rng).forEach(function(it){ s.queue.push({kind:'g',c:c.c,item:it}); });
+    });
+    s.queue = shuffle(s.queue, s.rng);
+    s.meta = {label:'文法 '+st};
+  } else if(s.phase==='v'){
+    var lv = VLEVELS[s.idx];
+    shuffle(s.vocab[lv], s.rng).slice(0,PER_VLEVEL).forEach(function(it){ s.queue.push({kind:'v',lvl:lv,item:it}); });
+    s.meta = {label:'語彙 '+lv};
+  } else if(s.phase==='s'){
+    ['med','arch'].forEach(function(k){
+      shuffle(s.vocab[k], s.rng).slice(0,PER_VLEVEL).forEach(function(it){ s.queue.push({kind:'v',lvl:k,item:it}); });
+    });
+    s.meta = {label:'語彙 専門'};
+  }
+  s.total = s.queue.length; s.done = 0;
+}
+function advancePhase(s){
+  if(s.phase==='g'){
+    var st = STAGES[s.idx], cs = stageConcepts(s, st);
+    var ok = cs.filter(function(c){return conceptStatus(s.log,c.c)==='ok';}).length;
+    var frac = ok/cs.length;
+    if(frac<0.4){ s.stopG = true; }
+    if(s.stopG || s.idx>=STAGES.length-1){ s.phase='v'; s.idx=0; } else { s.idx++; }
+  } else if(s.phase==='v'){
+    var lv = VLEVELS[s.idx];
+    if(vocabStatus(s.log, lv)==='ng'){ s.stopV = true; }
+    if(s.stopV || s.idx>=VLEVELS.length-1){ s.phase='ask'; } else { s.idx++; }
+  } else if(s.phase==='s'){ s.phase='done'; }
+}
+// 次の項目を返す。nullなら終了、{ask:true}なら専門語彙の可否確認
+function nextItem(s){
+  while(true){
+    if(s.phase==='done') return null;
+    if(s.phase==='ask') return {ask:true};
+    if(s.queue.length){ s.cur = s.queue.shift(); return s.cur; }
+    advancePhase(s);
+    if(s.phase==='ask') return {ask:true};
+    if(s.phase!=='done') loadPhase(s);
+  }
+}
+function answerSpecial(s, yes){ if(yes){ s.phase='s'; loadPhase(s);} else { s.phase='done'; } }
+function record(s, resp){
+  var cur = s.cur, ok = isCorrect(cur.item, resp);
+  var dk = (resp===null || resp===undefined || resp==='' );
+  var rec = {kind:cur.kind, c:cur.c, lvl:cur.lvl, item:cur.item, resp:resp, ok:ok, dk:dk};
+  s.log.push(rec); s.done++;
+  return rec;
+}
+function buildReport(s){
+  var rep = {concepts:[], vocab:[], special:[], recChapter:null, recDeck:null, notes:[], wrong:[]};
+  s.concepts.forEach(function(c){
+    rep.concepts.push({c:c.c, stage:c.stage, name:c.name, status:conceptStatus(s.log,c.c)});
+  });
+  VLEVELS.forEach(function(l){ rep.vocab.push({lvl:l, status:vocabStatus(s.log,l), n:s.log.filter(function(x){return x.kind==='v'&&x.lvl===l;}).length,
+    ok:s.log.filter(function(x){return x.kind==='v'&&x.lvl===l&&x.ok;}).length}); });
+  ['med','arch'].forEach(function(l){ var n=s.log.filter(function(x){return x.kind==='v'&&x.lvl===l;}).length;
+    if(n) rep.special.push({lvl:l,n:n,ok:s.log.filter(function(x){return x.kind==='v'&&x.lvl===l&&x.ok;}).length,status:vocabStatus(s.log,l)}); });
+  var firstNg = rep.concepts.filter(function(x){return x.status==='ng';})[0];
+  var firstMid = rep.concepts.filter(function(x){return x.status==='mid';})[0];
+  var tested = rep.concepts.filter(function(x){return x.status;});
+  if(firstNg) rep.recChapter = firstNg;
+  else if(firstMid) rep.recChapter = firstMid;
+  else rep.recChapter = null;
+  if(!firstNg && !firstMid && tested.length===rep.concepts.length) rep.notes.push('全章で3問中3問正解でした。文法テキストは弱い章の見直し用に使い、実際の文章(読み物)に進む段階です。');
+  var vd = rep.vocab.filter(function(x){return x.status && x.status!=='ok';})[0];
+  if(vd) rep.recDeck = vd.lvl; else if(rep.vocab.every(function(x){return x.status==='ok';})) rep.recDeck = 'special';
+  else rep.recDeck = 'A1';
+  if(s.stopG) rep.notes.push('習得章が4割未満の段階があったため、文法はそこで出題を打ち切りました。');
+  rep.wrong = s.log.filter(function(x){return !x.ok;});
+  rep.dk = s.log.filter(function(x){return x.dk;}).length;
+  rep.total = s.log.length;
+  rep.correct = s.log.filter(function(x){return x.ok;}).length;
+  return rep;
+}
+if(typeof module!=='undefined') module.exports = {norm:norm,isCorrect:isCorrect,answerOf:answerOf,newSession:newSession,nextItem:nextItem,record:record,buildReport:buildReport,answerSpecial:answerSpecial,conceptStatus:conceptStatus,vocabStatus:vocabStatus,DECKS:DECKS};
+</script>
+<script>var VOCAB = {"A1": [{"m": "海", "a": "das Meer", "h": "名詞(冠詞をつけて答える)　M…(4文字)"}, {"m": "〜になる", "a": "werden", "h": "動詞(不定詞)　w…(6文字)"}, {"m": "卵", "a": "das Ei", "h": "名詞(冠詞をつけて答える)　E…(2文字)"}, {"m": "黄色い", "a": "gelb", "h": "形容詞　g…(4文字)"}, {"m": "読む", "a": "lesen", "h": "動詞(不定詞)　l…(5文字)"}, {"m": "到着する", "a": "ankommen", "h": "動詞(不定詞)　a…(8文字)"}, {"m": "君は", "a": "du", "h": "副詞・その他　d…(2文字)"}, {"m": "いつも", "a": "immer", "h": "副詞・その他　i…(5文字)"}, {"m": "昼食", "a": "das Mittagessen", "h": "名詞(冠詞をつけて答える)　M…(11文字)"}, {"m": "既婚の", "a": "verheiratet", "h": "形容詞　v…(11文字)"}, {"m": "答え", "a": "die Antwort", "h": "名詞(冠詞をつけて答える)　A…(7文字)"}, {"m": "晩", "a": "der Abend", "h": "名詞(冠詞をつけて答える)　A…(5文字)"}, {"m": "髪の毛", "a": "die Haare", "h": "名詞(冠詞をつけて答える)　H…(5文字)"}, {"m": "答える", "a": "antworten", "h": "動詞(不定詞)　a…(9文字)"}], "A2": [{"m": "人気のある", "a": "beliebt", "h": "形容詞　b…(7文字)"}, {"m": "特に", "a": "besonders", "h": "副詞・その他　b…(9文字)"}, {"m": "祝う", "a": "feiern", "h": "動詞(不定詞)　f…(6文字)"}, {"m": "歯", "a": "der Zahn", "h": "名詞(冠詞をつけて答える)　Z…(4文字)"}, {"m": "旅に出る", "a": "verreisen", "h": "動詞(不定詞)　v…(9文字)"}, {"m": "地下室", "a": "der Keller", "h": "名詞(冠詞をつけて答える)　K…(6文字)"}, {"m": "契約", "a": "der Vertrag", "h": "名詞(冠詞をつけて答える)　V…(7文字)"}, {"m": "現代的な", "a": "modern", "h": "形容詞　m…(6文字)"}, {"m": "建築", "a": "die Architektur", "h": "名詞(冠詞をつけて答える)　A…(11文字)"}, {"m": "服を着る", "a": "anziehen|sich anziehen", "h": "動詞(不定詞)　a…(8文字)"}, {"m": "〜にもかかわらず", "a": "trotz|ungeachtet", "h": "副詞・その他　t…(5文字)"}, {"m": "雨が降る", "a": "regnen", "h": "動詞(不定詞)　r…(6文字)"}, {"m": "意見", "a": "die Meinung", "h": "名詞(冠詞をつけて答える)　M…(7文字)"}, {"m": "階段", "a": "die Treppe", "h": "名詞(冠詞をつけて答える)　T…(6文字)"}], "B1": [{"m": "影響を与える", "a": "beeinflussen", "h": "動詞(不定詞)　b…(12文字)"}, {"m": "意味する", "a": "bedeuten", "h": "動詞(不定詞)　b…(8文字)"}, {"m": "用心深い", "a": "vorsichtig", "h": "形容詞　v…(10文字)"}, {"m": "〜の外で", "a": "außerhalb", "h": "副詞・その他　a…(9文字)"}, {"m": "支援する", "a": "unterstützen", "h": "動詞(不定詞)　u…(12文字)"}, {"m": "採用面接", "a": "das Vorstellungsgespräch", "h": "名詞(冠詞をつけて答える)　V…(20文字)"}, {"m": "雇用主", "a": "der Arbeitgeber", "h": "名詞(冠詞をつけて答える)　A…(11文字)"}, {"m": "万一〜の場合", "a": "falls", "h": "副詞・その他　f…(5文字)"}, {"m": "見出し", "a": "die Überschrift", "h": "名詞(冠詞をつけて答える)　Ü…(11文字)"}, {"m": "成長する", "a": "wachsen", "h": "動詞(不定詞)　w…(7文字)"}, {"m": "税金", "a": "die Steuer", "h": "名詞(冠詞をつけて答える)　S…(6文字)"}, {"m": "丘", "a": "der Hügel", "h": "名詞(冠詞をつけて答える)　H…(5文字)"}, {"m": "草地", "a": "die Wiese", "h": "名詞(冠詞をつけて答える)　W…(5文字)"}, {"m": "環境にやさしい", "a": "umweltfreundlich", "h": "形容詞　u…(16文字)"}], "B2": [{"m": "改善", "a": "die Verbesserung", "h": "名詞(冠詞をつけて答える)　V…(12文字)"}, {"m": "〜に関して", "a": "hinsichtlich|bezüglich", "h": "副詞・その他　h…(12文字)"}, {"m": "学術的な", "a": "akademisch", "h": "形容詞　a…(10文字)"}, {"m": "知らせる", "a": "benachrichtigen|mitteilen", "h": "動詞(不定詞)　b…(15文字)"}, {"m": "領域", "a": "der Bereich", "h": "名詞(冠詞をつけて答える)　B…(7文字)"}, {"m": "原理", "a": "das Prinzip", "h": "名詞(冠詞をつけて答える)　P…(7文字)"}, {"m": "抵抗", "a": "der Widerstand", "h": "名詞(冠詞をつけて答える)　W…(10文字)"}, {"m": "傷つける", "a": "verletzen", "h": "動詞(不定詞)　v…(9文字)"}, {"m": "実施する", "a": "durchführen", "h": "動詞(不定詞)　d…(11文字)"}, {"m": "方法", "a": "die Methode", "h": "名詞(冠詞をつけて答える)　M…(7文字)"}, {"m": "限られた", "a": "begrenzt", "h": "形容詞　b…(8文字)"}, {"m": "残念に思う", "a": "bedauern", "h": "動詞(不定詞)　b…(8文字)"}, {"m": "ほぼ", "a": "nahezu", "h": "副詞・その他　n…(6文字)"}, {"m": "事情", "a": "der Umstand", "h": "名詞(冠詞をつけて答える)　U…(7文字)"}], "med": [{"m": "感染する", "a": "infizieren|sich infizieren", "h": "動詞(不定詞)　i…(10文字)"}, {"m": "脊髄", "a": "das Rückenmark", "h": "名詞(冠詞をつけて答える)　R…(10文字)"}, {"m": "胆嚢", "a": "die Gallenblase", "h": "名詞(冠詞をつけて答える)　G…(11文字)"}, {"m": "脛骨", "a": "das Schienbein", "h": "名詞(冠詞をつけて答える)　S…(10文字)"}, {"m": "手術する", "a": "operieren", "h": "動詞(不定詞)　o…(9文字)"}, {"m": "抗生物質", "a": "das Antibiotikum", "h": "名詞(冠詞をつけて答える)　A…(12文字)"}, {"m": "ふくらはぎ", "a": "die Wade", "h": "名詞(冠詞をつけて答える)　W…(4文字)"}, {"m": "肺炎", "a": "die Lungenentzündung", "h": "名詞(冠詞をつけて答える)　L…(16文字)"}, {"m": "がん", "a": "der Krebs", "h": "名詞(冠詞をつけて答える)　K…(5文字)"}, {"m": "診断する", "a": "diagnostizieren", "h": "動詞(不定詞)　d…(15文字)"}, {"m": "用量", "a": "die Dosis", "h": "名詞(冠詞をつけて答える)　D…(5文字)"}, {"m": "便秘", "a": "die Verstopfung", "h": "名詞(冠詞をつけて答える)　V…(11文字)"}, {"m": "咽頭", "a": "der Rachen", "h": "名詞(冠詞をつけて答える)　R…(6文字)"}, {"m": "胃", "a": "der Magen", "h": "名詞(冠詞をつけて答える)　M…(5文字)"}], "arch": [{"m": "展示する", "a": "ausstellen", "h": "動詞(不定詞)　a…(10文字)"}, {"m": "新築", "a": "der Neubau", "h": "名詞(冠詞をつけて答える)　N…(6文字)"}, {"m": "大聖堂", "a": "die Kathedrale|der Dom", "h": "名詞(冠詞をつけて答える)　K…(10文字)"}, {"m": "芸術作品", "a": "das Kunstwerk", "h": "名詞(冠詞をつけて答える)　K…(9文字)"}, {"m": "象徴", "a": "das Symbol", "h": "名詞(冠詞をつけて答える)　S…(6文字)"}, {"m": "胸像", "a": "die Büste", "h": "名詞(冠詞をつけて答える)　B…(5文字)"}, {"m": "自然光", "a": "das Tageslicht", "h": "名詞(冠詞をつけて答える)　T…(10文字)"}, {"m": "建立する", "a": "errichten", "h": "動詞(不定詞)　e…(9文字)"}, {"m": "表現主義", "a": "der Expressionismus", "h": "名詞(冠詞をつけて答える)　E…(15文字)"}, {"m": "色あせる", "a": "verblassen", "h": "動詞(不定詞)　v…(10文字)"}, {"m": "広がり", "a": "die Weite", "h": "名詞(冠詞をつけて答える)　W…(5文字)"}, {"m": "打放しコンクリート", "a": "der Sichtbeton", "h": "名詞(冠詞をつけて答える)　S…(10文字)"}, {"m": "立像", "a": "die Statue", "h": "名詞(冠詞をつけて答える)　S…(6文字)"}, {"m": "装飾", "a": "das Ornament", "h": "名詞(冠詞をつけて答える)　O…(8文字)"}]};</script>
+<script>
+(function(){
+var $ = function(id){return document.getElementById(id);};
+var S = null, curItem = null, selMC = null;
+var STN = {ok:'習得',mid:'ほぼ(要確認)',ng:'未習得'};
+function show(id){ ['s-start','s-q','s-ask','s-rep'].forEach(function(x){ $(x).classList.toggle('hide', x!==id); }); window.scrollTo(0,0); }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function stLabel(st){ return st? '<span class="st-'+st+'">'+STN[st]+'</span>' : '<span class="st-na">未出題</span>'; }
+function seedRng(){ return Math.random; }
+
+function start(){
+  S = newSession(BANK, CONCEPTS, VOCAB, seedRng());
+  step();
+}
+function step(){
+  var it = nextItem(S);
+  if(it===null){ finish(); return; }
+  if(it.ask){ show('s-ask'); return; }
+  curItem = it; selMC = null; renderQ(it); show('s-q');
+}
+function renderQ(c){
+  var it = c.item;
+  $('q-label').textContent = S.meta.label;
+  $('q-prog').style.width = Math.round(100*S.done/Math.max(1,S.total))+'%';
+  $('q-hint').textContent = '';
+  var inp = $('q-input'); inp.innerHTML='';
+  if(c.kind==='v'){
+    $('q-text').innerHTML = '「'+esc(it.m)+'」をドイツ語で。';
+    $('q-hint').textContent = it.h;
+  } else if(it.t==='t'){
+    $('q-text').innerHTML = esc(it.q).replace(/___/g,'<span class="blank">&nbsp;</span>');
+  } else {
+    $('q-text').textContent = it.q;
+  }
+  if(it.t==='m' && c.kind==='g'){
+    var d = document.createElement('div'); d.className='opts';
+    it.o.forEach(function(o,i){ var b=document.createElement('button'); b.textContent=o; b.onclick=function(){ selMC=i; Array.prototype.forEach.call(d.children,function(x,j){ x.classList.toggle('sel',j===i); }); }; d.appendChild(b); });
+    inp.appendChild(d);
+  } else {
+    var t = document.createElement('input'); t.type='text'; t.id='ans'; t.setAttribute('autocapitalize','off'); t.setAttribute('autocorrect','off'); t.setAttribute('autocomplete','off'); t.setAttribute('spellcheck','false'); t.setAttribute('enterkeyhint','done');
+    inp.appendChild(t);
+    var ch = document.createElement('div'); ch.className='chars';
+    ['ä','ö','ü','ß'].forEach(function(x){ var b=document.createElement('button'); b.textContent=x; b.type='button'; b.onmousedown=function(e){e.preventDefault();}; b.onclick=function(){ var s=t.selectionStart||t.value.length, e2=t.selectionEnd||s; t.value=t.value.slice(0,s)+x+t.value.slice(e2); t.focus(); t.setSelectionRange(s+1,s+1); }; ch.appendChild(b); });
+    inp.appendChild(ch);
+    t.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); submit(); } });
+    setTimeout(function(){ try{ t.focus(); }catch(e){} },50);
+  }
+}
+function submit(dk){
+  var it = curItem.item, resp;
+  if(dk){ resp = null; }
+  else if(it.t==='m' && curItem.kind==='g'){ if(selMC===null) return; resp = selMC; }
+  else { var t=$('ans'); resp = t.value.trim(); if(!resp) return; }
+  record(S, resp); step();
+}
+function finish(){
+  var rep = buildReport(S);
+  saveHistory(rep);
+  $('s-rep').innerHTML = renderReport(rep);
+  show('s-rep');
+  var cb = $('b-copy'); if(cb) cb.onclick = function(){ copyText(reportText(rep)); };
+  var rb = $('b-restart'); if(rb) rb.onclick = function(){ show('s-start'); };
+}
+function chTitle(c){ return '第'+c.c+'章 '+c.name; }
+function renderReport(rep){
+  var h = '<h1>診断結果</h1>';
+  h += '<p class="mut">'+rep.total+'問中 '+rep.correct+'問正解、「分からない」'+rep.dk+'問。</p>';
+  h += '<div class="rec"><b>おすすめの出発点</b>';
+  if(rep.recChapter){ h += '<p>文法テキスト:<b>'+esc(chTitle(rep.recChapter))+'</b>('+stLabelText(rep.recChapter.status)+')から。</p>'; }
+  else { h += '<p>文法テキスト:出題範囲に未習得の章はありませんでした。</p>'; }
+  if(rep.recDeck==='special'){ h += '<p>単語デッキ:'+DECKS.med+' と '+DECKS.arch+'、および読み物から。</p>'; }
+  else { h += '<p>単語デッキ:<b>'+DECKS[rep.recDeck]+'</b>から。</p>'; }
+  rep.notes.forEach(function(n){ h += '<p class="mut">'+esc(n)+'</p>'; });
+  h += '</div>';
+  h += '<h2>文法</h2><table><tr><th>章</th><th>項目</th><th>段階</th><th>判定</th></tr>';
+  rep.concepts.forEach(function(c){ h += '<tr><td>'+c.c+'</td><td>'+esc(c.name)+'</td><td>'+c.stage+'</td><td>'+stLabel(c.status)+'</td></tr>'; });
+  h += '</table><p class="mut">習得は3問すべて正解。ほぼ(要確認)は3問中2問正解で、理由を説明できるか確認してください。</p>';
+  h += '<h2>語彙(日本語→ドイツ語)</h2><table><tr><th>段階</th><th>正解</th><th>判定</th></tr>';
+  rep.vocab.forEach(function(v){ h += '<tr><td>'+DECKS[v.lvl]+'</td><td>'+(v.n? v.ok+' / '+v.n : '-')+'</td><td>'+stLabel(v.status)+'</td></tr>'; });
+  rep.special.forEach(function(v){ h += '<tr><td>'+DECKS[v.lvl]+'</td><td>'+v.ok+' / '+v.n+'</td><td>'+stLabel(v.status)+'</td></tr>'; });
+  h += '</table><p class="mut">語彙は産出(自分で綴る)で測っているため、読めるが書けない語は未習得と出ます。Ankiの産出カードがその練習に当たります。</p>';
+  h += '<h2>見直し</h2>';
+  if(!rep.wrong.length) h += '<p>誤答はありませんでした。</p>';
+  rep.wrong.forEach(function(w){
+    var it = w.item, ans = answerOf(it), q = w.kind==='v' ? '「'+it.m+'」' : it.q;
+    var yours = w.dk ? '(分からない)' : (it.t==='m' && w.kind==='g' ? it.o[w.resp] : w.resp);
+    var where = w.kind==='g' ? '文法テキスト 第'+w.c+'章' : 'デッキ '+DECKS[w.lvl];
+    h += '<div class="wr">'+esc(q)+'<br>あなた:'+esc(yours)+'　正解:<b>'+esc(ans)+'</b><br><small>'+where+'</small></div>';
+  });
+  h += '<h2>記録</h2><p class="mut">この結果を貼り付けられる形で書き出します。</p><div class="row"><button class="primary" id="b-copy">結果をコピー</button><button id="b-restart">最初へ戻る</button></div><textarea id="ta" readonly class="hide"></textarea>';
+  return h;
+}
+function stLabelText(st){ return STN[st]; }
+function reportText(rep){
+  var d = new Date(), L = [];
+  L.push('ドイツ語 到達度診断 '+d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2));
+  L.push(rep.total+'問中'+rep.correct+'問正解(分からない'+rep.dk+'問)');
+  L.push('おすすめ出発点: '+(rep.recChapter? chTitle(rep.recChapter) : '文法は未習得なし')+' / デッキ '+(rep.recDeck==='special'? '専門':DECKS[rep.recDeck]));
+  L.push('[文法]');
+  rep.concepts.forEach(function(c){ L.push('第'+c.c+'章 '+c.name+': '+(c.status?STN[c.status]:'未出題')); });
+  L.push('[語彙]');
+  rep.vocab.forEach(function(v){ L.push(DECKS[v.lvl]+': '+(v.n? v.ok+'/'+v.n+' '+STN[v.status] : '未出題')); });
+  rep.special.forEach(function(v){ L.push(DECKS[v.lvl]+': '+v.ok+'/'+v.n+' '+STN[v.status]); });
+  if(rep.wrong.length){ L.push('[誤答]'); rep.wrong.forEach(function(w){ L.push((w.kind==='g'?'文法'+w.c+'章 ':w.lvl+' ')+(w.kind==='v'? w.item.m : w.item.q)+' -> '+answerOf(w.item)+' (回答: '+(w.dk?'分からない':(w.item.t==='m'&&w.kind==='g'?w.item.o[w.resp]:w.resp))+')'); }); }
+  return L.join('\n');
+}
+function copyText(txt){
+  var ta = $('ta'); ta.value = txt; ta.classList.remove('hide'); ta.focus(); ta.select();
+  var ok=false; try{ ok = document.execCommand('copy'); }catch(e){}
+  if(!ok && navigator.clipboard){ try{ navigator.clipboard.writeText(txt); }catch(e){} }
+}
+function saveHistory(rep){
+  try{
+    var h = JSON.parse(localStorage.getItem('deDiag')||'[]');
+    h.unshift({t:Date.now(), correct:rep.correct, total:rep.total, ch: rep.recChapter? rep.recChapter.c : null, deck: rep.recDeck});
+    localStorage.setItem('deDiag', JSON.stringify(h.slice(0,20)));
+  }catch(e){}
+}
+function showHist(){
+  var box = $('hist'), h=[];
+  try{ h = JSON.parse(localStorage.getItem('deDiag')||'[]'); }catch(e){}
+  if(!h.length){ box.innerHTML = '<p class="mut">保存された結果はありません。</p>'; }
+  else {
+    box.innerHTML = '<table><tr><th>日時</th><th>正解</th><th>出発章</th><th>デッキ</th></tr>'+h.map(function(x){ var d=new Date(x.t);
+      return '<tr><td>'+d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)+'</td><td>'+x.correct+'/'+x.total+'</td><td>'+(x.ch?('第'+x.ch+'章'):'-')+'</td><td>'+(x.deck==='special'?'専門':(DECKS[x.deck]||'-'))+'</td></tr>'; }).join('')+'</table>';
+  }
+  box.classList.toggle('hide');
+}
+$('b-start').onclick = start;
+$('b-hist').onclick = showHist;
+$('b-ans').onclick = function(){ submit(false); };
+$('b-dk').onclick = function(){ submit(true); };
+$('b-sp-y').onclick = function(){ answerSpecial(S,true); step(); };
+$('b-sp-n').onclick = function(){ answerSpecial(S,false); step(); };
+// 自動テスト用(通常は使われない)
+window.__auto = function(mode){
+  S = newSession(BANK, CONCEPTS, VOCAB, seedRng());
+  var guard=0;
+  while(S.phase!=='done' && guard++<2000){
+    var it = nextItem(S);
+    if(it===null) break;
+    if(it.ask){ answerSpecial(S, mode!=='a1'); continue; }
+    var x = it.item, resp;
+    var good = (mode==='perfect') || (mode==='a1' && it.kind==='g' && STAGES.indexOf(S.concepts.filter(function(c){return c.c===it.c;})[0].stage)===0) || (mode==='a1' && it.kind==='v' && it.lvl==='A1');
+    if(good){ resp = x.t==='m' && it.kind==='g' ? x.k : (it.kind==='v'? x.a.split('|')[0] : x.a.split('|')[0]); }
+    else { resp = (x.t==='m' && it.kind==='g') ? (x.k+1)%5 : 'zzz'; }
+    S.cur = it; record(S, resp);
+  }
+  var rep = buildReport(S);
+  return rep;
+};
+if(location.hash==='#preview'){ start(); }
+if(location.hash.indexOf('#auto-')===0){
+  var r = window.__auto(location.hash.slice(6));
+  var cnt={};S.log.forEach(function(l){var k=l.kind==='g'?'g'+l.c:'v'+l.lvl;cnt[k]=(cnt[k]||0)+1;});var out = {cnt:cnt,total:r.total,correct:r.correct,rec:r.recChapter&&r.recChapter.c,deck:r.recDeck,concepts:r.concepts.map(function(c){return c.status;}).join(','),vocab:r.vocab.map(function(v){return v.status;}).join(',')};
+  var pre = document.createElement('pre'); pre.id='autotest'; pre.textContent = JSON.stringify(out); document.body.appendChild(pre);
+  finish();
+}
+})();
+</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}</script>
+</body></html>
